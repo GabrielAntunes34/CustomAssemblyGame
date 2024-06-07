@@ -1,0 +1,52 @@
+No Mac:
+
+
+A) Instale as dependências.
+		Primeiramente escolha qual gerenciador de pacotes deseja usar. MacPorts e Homebrew são incompatíveis, então cuidado para não instalar os dois. Se não tiver nenhum dos dois, feche os olhos e escolha um aleatório.
+
+	-------
+
+	1.1) Instale o MacPorts (http://www.macports.org/install.php)
+
+	1.2) Instale o nCurses: sudo port install ncurses
+
+	1.3) Instale o GTK 2.0: sudo port install gtk2
+
+	1.4) Instale o servidor gráfico X: sudo port install xorg-server
+
+	--- OU ---
+
+	2.1) Instale o Homebrew (http://brew.sh/)
+
+	2.2) Instale o nCurses: brew install ncurses
+
+	2.3) Instale o GTK 2.0: brew install gtk+
+
+	2.4) Instale o servidor gráfico X: (http://xquartz.macosforge.org/landing/)
+
+	-------
+
+	5) Finalize a sessão e faça um novo login no seu Mac (ou reinicie) para atualizar as variáveis de ambiente.
+
+B) Se os executáveis inclusos não funcionarem:
+	0) Será preciso instalar o pkgconfig: sudo port install pkgconfig
+
+	1) Vá para a pasta com o código-fonte do simulador: "simulador_fonte"
+
+	2) Compile com: ./compila.sh
+
+	3) Copie o executável para sua pasta de trabalho.
+
+	4) Vá para a pasta com o código-fonte do montador: "montador_fonte"
+
+	5) Compile com gcc -o montador *.c
+
+	6) Copie o executável para sua pasta de trabalho.
+
+C) Montando um Programa em linguagem Assemby (*.ASM):
+	1) Para montar o codigo: ./montador printaASCII.asm printaASCII.mif
+
+D) Simulando um Programa em linguagem Assemby (*.MIF)
+	1) ./simulador printaASCII.mif charmap.mif
+
+	OBS: Note que nos Macs em geral Fn + uma seta (cima, baixo, esquerda, direita) produzirá PageUp, PageDown, Home, End (respectivamente).
