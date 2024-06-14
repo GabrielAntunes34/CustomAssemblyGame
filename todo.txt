@@ -1,0 +1,39 @@
+--> Level:
+- map_setup(int nRooms, int posPlayer) {
+    RefreshScreen();
+    for(0 até nRooms)
+        createRoom();
+        DrawnRoom();
+    
+}
+
+
+--> SALINHAS:
+- "Struct" para a sala:
+    posição da sala;
+    largura;
+    altura;
+     !vetor de portas
+     !vetor de inimigos;
+     !vetor de itens;
+
+
+- Desenho da sala:
+    ---------------
+    |.............|
+    |.............|
+    |.............|
+    |.............|
+    ---------------
+
+- CreateRoom(pos, width, heigth) {
+    instancia os elementos de uma sala
+}
+
+
+
+--> Jogador:
+    Colisoes() {
+        se ., pode andar
+        
+    }
