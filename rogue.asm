@@ -1,6 +1,9 @@
 ; Adaptação do Rogue The Videogame, para a arquitetura do ICMC
 jmp main
 
+; Mapa da tela na memória, para facilitar o cálculo das posições
+memoryMap: #1200
+
 ; Variáveis da sala         
 room: var #6                ; 0: position, 1: heigth, 2: width, 3: nrmDoors, 4: nrmEnemies, 5: ptrItem, 
 
