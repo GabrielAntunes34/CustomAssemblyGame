@@ -27,6 +27,7 @@ mainLoop:
     outchar r3, r0       ; Imprimindo o valor de r3 na posição de r0
     inc r0               ; r0++
     inc r1               ; fazendo r1 apontar para o endereço do próximo caracter
+    mod r1, r1, r0
     cmp r3, r2
     jne mainLoop         ; Itera enquanto não chegar em \0
 
