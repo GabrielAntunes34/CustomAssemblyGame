@@ -67,10 +67,10 @@ main:
 
 	; Esperando o jogador digitar "enter" para inicializar
 tittleLoop:
-	loadn r3, #'a'
+	loadn r3, #255
 	inchar r0
 	cmp r3, r0
-	jne tittleLoop
+	jeq tittleLoop
 
     ; Criando a sala do nível atual
     call MapSetUp
@@ -365,7 +365,7 @@ DrawRoomLoop1:
 	loadi r5, r5
 	loadn r7, #768
 	add r5, r5, r7
-DrawRoomLoop2:  ;255
+DrawRoomLoop2:
 	outchar r5, r1
 	inc r1
 	inc r6
