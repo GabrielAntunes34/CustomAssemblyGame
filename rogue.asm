@@ -118,23 +118,41 @@ mainNewLevel:
 mainGameLoop:
     inchar r0               ; r0 recebe o comando do jogador, garantindo que nada ocorra até o input
     
-    ; Tratando eventos do gameLoop
+	; Esperando o turno do jogador
+	loadn r1, #255
+	cmp r0, r1
+	jeq mainGameLoop
+
 	; caso o jogador saia do jogo
     loadn r1, #'q'
     cmp r0, r1
     jeq mainEnd
 
-	; caso ele tenha morrido
-	; if posPlayer == Door: Generate new Level
-
     ; Processando as mudanças para o jogador
     call ProcessPlayer
+	;call ProcessEnemy
+
+	; Caso o jogador, tenha morrido:
+	loadn r0, #player
+	inc r0
+	loadi r0, r0			; r0 recebe a vida do jogador
+	loadn r1, #0			; r1 recebe zero para a comparação
+	cmp r0, r1
+	jeq mainDeathSecren
 
     jmp mainGameLoop
+
 mainEnd:
 	call RefreshScreen
     halt
 
+mainDeathSecren:
+	call RefreshScreen
+	loadn r0, #0
+	loadn r1, #Msn0
+	loadn r2, #0
+	call PrintString
+	jmp mainEnd				; Falta um loop aqui...
 
 ; GenerateRand(): Retorna em r2 o número aleatório
 GenerateRand:
@@ -168,8 +186,9 @@ GenerateRand:
 	pop r0
 	rts
 
-;UISetUp()
-; Inicializa a UI com as informações do jogador
+
+
+; UISetUp(): Inicializa a UI com as informações do jogador
 UISetUp:
 	push r0					; Posição da tela
 	push r1					; String convertida para a tela
@@ -221,6 +240,8 @@ UISetUp:
 	pop r1
 	pop r0
 	rts
+
+
 
 ;PlayerSetUp
 ; Inicializa as variáveis do jogador quando começamos o jogo
