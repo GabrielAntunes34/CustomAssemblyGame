@@ -30,15 +30,18 @@ static MaxHealthPotion + #1, #15
 
 player: var #5				; player: 0: posPlayer, 1: life, 2: maxLife, 3: coins, 4: damage
 spritePlayer: var #1  
-static spritePlayer + #0, #'@' 
+static spritePlayer + #0, #'@'
+
+enemies: var #9			; Enemies: 0: LifeEnemy1, 1: PosEnemy1, 2: damageEnemy1, 3: lifeEnemy2, .., 6: LifeEnemy3, ..
+spriteEnemy: var #1
+static spriteEnemy + #0, #'&'
+
+
 
 ; Strings da UI
 UI0: string "HP : \0"
 UI2: string "ATK: \0"
 UI1: string "$$ : \0"
-
-Msn0: string "V O C E   M O R R E U !!!"
-Msn1: string "Quer jogar novamente? <s/n>"
 
 
 ; Tabela de valores randômicos... Ainda falta arrumar algumas coisas
@@ -127,7 +130,7 @@ mainTittleLoop:
 	storei r5, r4			; salvando em incRand a seed
 
 mainRestart:
-	; Gerando o item do level atual
+	; Gerando o item do level primeiro level
 	call GenerateRand
 	loadn r5, #4
 	mod r2, r2, r5
@@ -172,7 +175,12 @@ mainGameLoop:
 	;jne mainProcessDoor
 	;call SpawnItem			; se nmrEnemies == 0
 
-mainProcessDoor:
+	; Caso o jogador tenhe chegado a uma porta
+	call IsItADoor			; Retornando em r1 se há portas e, se sim, setando
+	loadn r3, #1			; o item em r2
+	cmp r1, r3
+	jeq mainNewLevel
+
     jmp mainGameLoop
 
 mainEnd:
@@ -561,23 +569,253 @@ Grabmaxhealthpotion:
 	pop r1
 	jmp HandleWallColisionEnd
 
+
+; Gera os inimigos de um novo mapa a partir de nmrEnemies
 SetEnemies:
-	push r0
-	push r1
+	push r0					; Auxiliar para valores imediatos / contador
+	push r1					; Indice para o inimigo 
+	push r2					; Número de inimigos gerado
+	push r3					; Endereço de nmrEnemies / auxiliar para r1
 
+	; Guardando em r3 o endereço de nmrEnemies
 	loadn r0, #4
-	loadn r1, #room
-	add r1, r1, r0
-	
-	loadn r0, #0
-	storei r1, r0
+	loadn r3, #room
+	add r3, r3, r0
 
+	; Gerando uma quantidade de inimigos (1 a 3)
+	loadn r0, #3
+	call GenerateRand
+	mod r2, r2, r0
+	inc r2					; Número de inimigos gerado
+
+	; Loop para setar cada inimigo
+	loadn r1, #0			; r1 recebe a posição do primeiro inimigo
+	loadn r0, #0			; r0 é o contador
+	loadn r3, #3			; será usado para incrementar r1
+	
+SetEnemiesLoop:
+	call EnemiesSetUp
+	inc r0					; contador++
+	add r1, r1, r3			; r1 recebe o novo índice
+	cmp r0, r2
+	jle SetEnemiesLoop		; Itera enquanto contador < nrmEnemies
+
+	pop r3
+	pop r2
 	pop r1
 	pop r0
 	rts
 
+; EnemiesSetUp(r1 = indice)
+; r1 indice do inimigo (0: superior direito, 1: inferior direito, 2: inferior esquerdo)
+EnemiesSetUp:
+	push r0
+	push r1
+	push r2
+	push r3
+	push r4
+	push r5
+	push r6
+	push r7
+	
+	loadn r3, #enemies   ; Posição de memória do primeiro índice do inimigo
+	; Inicializa vida dos inimigos 
+	loadn r5, #0	; Auxiliar que terá valor igual a 3
+	add r5, r5, r1	
+	add r5, r3, r5  ; vai pegar a posição de memória da vida
+	call GenerateRand	; Vai salvar um valor aleatório em r2
+	loadn r4, #50		; Valor auxiliar que é igual a 50
+	mod r2, r2, r4			; Vai efetivamente ter o valor da vida
+	storei r5, r2		; Vai armazenar o valor da vida na posição de r5
+	; Inicializa Dano dos inimigos
+	loadn r5, #2
+	add r5, r5, r1
+	add r5, r3, r5		; Vai pegar a posição de memória do Dano
+	loadn r2, #10		; Dano será igual a 10
+	storei r5, r2
 
-; MapSetUp(r2 = item), cria um novo nível
+	; Inicializa posição inicial dos inimigos
+	loadn r4, #room   ; Endereço de memória da posição inicial da sala
+	loadn r5, #0      
+	cmp r0, r5
+	jeq EnemiesSetUpIsZero
+	loadn r5, #1
+	cmp r0, r5 
+	jeq EnemiesSetUpIsOne
+	loadn r5, #2
+	cmp r0, r5 
+	jeq EnemiesSetUpIsTwo
+
+EnemiesSetUpEnd:
+	pop r7
+	pop r6
+	pop r5
+	pop r4
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+	rts	
+	
+EnemiesSetUpIsZero:
+	loadi r0, r4   ; Valor da posição inicial da sala
+	loadn r6, #2   ; Auxiliar que vai ter o valor 2
+	add r3, r4, r6 ; Posição de memória do Width
+	loadi r3, r3   ; Valor de Width
+	loadn r2, #40  ; Auxiliar que vai ter valor 41
+	add r0, r0, r2
+	add r0, r0, r3  ; Após tudo, r0 tem valor da posição
+	loadn r6, #1
+	add r6, r6, r1
+	loadn r3, #enemies 
+	add r3, r3, r6  ; Pega posição de memória da posição do inimigo
+	storei r3, r0
+
+	loadn r7, #'a'
+	outchar r7, r0
+	jmp EnemiesSetUpEnd
+EnemiesSetUpIsOne:
+	loadi r0, r4
+	loadn r6, #1
+	add r3, r4, r6 ; Posição de Memória do Height
+	loadi r3, r3   ; Valor do Height
+	loadn r2, #40
+	mul r3, r3, r2 ; Valor quando pega Height e multiplica por 40
+	loadn r6, #2  ; Auxiliar que vai ter valor igual a 2
+	add r6, r6, r4 ; Pega posição de memória de Width
+	loadi r6, r6 ; Pega valor de Width
+	add r3, r3, r6 ; Soma já com o Width (Agora falta somar com a posição inicial)
+	add r3, r3, r0 ; Valor final
+	loadn r6, #1
+	add r6, r6, r1
+	loadn r2, #enemies
+	add r2, r2, r6 ; Pega a posição de memória do inimigo
+	storei r2, r3 ; Salva no endereço de memória de r2 o valor contido em r3
+
+	loadn r7, #'b'
+	outchar r7, r3
+	jmp EnemiesSetUpEnd
+
+EnemiesSetUpIsTwo:
+	loadi r0, r4	; Valor da posição inicial da sala
+	inc r0
+	loadn r6, #1
+	add r3, r4, r6 ; Posição de Memória do Height
+	loadi r3, r3   ; Valor do Height
+	loadn r2, #40
+	mul r3, r3, r2 ; Valor quando pega Height e multiplica por 40
+	add r3, r3, r0 ; Valor final
+	loadn r6, #1
+	add r6, r6, r1
+	loadn r2, #enemies
+	add r2, r2, r6 ; Pega a posição de memória do inimigo
+	storei r2, r3 ; Salva no endereço de memória de r2 o valor contido em r3
+
+	loadn r7, #'c'
+	outchar r7, r3
+	jmp EnemiesSetUpEnd
+
+
+
+ProcessEnemy:
+	push r0
+	push r1
+	push r2
+	push r3
+	push r4
+	
+	; Enemies: 0: LifeEnemy1, 1: PosEnemy1, 2: DamageEnemy1, 3: lifeEnemy2, ..,
+	loadn r1, #4
+	loadn r0, #room			; endereço #room em r0
+	add r0, r0, r1			; somar 4 para conseguir a quantidade de inimigos
+	loadi r2, r0			; r2 = valor da quantidade de inimigos
+
+	loadn r1, #0			; vai guardar o index do inimigo
+	loadn r3, #enemies		; Endereco inimigo
+	call MovEnemyLoop
+
+	pop r4	
+	pop r3	
+	pop r2	
+	pop r1
+	pop r0
+	rts
+
+; MovEnemyLoop(r2 = qtd de inimigos, r3 = endereco inimigo atual)
+; Loop por cada inimigo
+; Para cada inimigo, ver posição do jogador, e posição dos outros inimigos
+MovEnemyLoop:
+	loadn r0, #0
+	loadi r4, r3			; life enemy
+	cmp r0, r4				; comparar lifeEnemy com 0
+	jle MovEnemyAlive		; caso seja r4 > 0, entao está vivo
+
+	loadn r0, #3
+	add r3, r3, r0			; pular inimigo
+	jmp MovEnemyLoop
+
+; inimigo vivo, r3 = endereco do inimigo da vez	
+MovEnemyAlive:
+	load r0, player			; pegar a posição do jogador
+	
+	inc r3
+	loadi r1, r3			; r1 = pos inimigo
+
+	
+
+	cmp r1, r2
+	jeq MovEnemyLoopEnd		; sair do loop depois que passar por todos
+	inc r1
+	
+	jmp MovEnemyLoop
+
+MovEnemyLoopEnd:
+	rts
+
+MovEnemy:
+    push r3
+    push r4
+    push r5
+    push r6
+	push r7
+
+    loadn r3, #'w'          ; Andar para cima
+    cmp r0, r3
+    jeq MovPlayerW
+
+    loadn r3, #'d'          ; Andar para direita
+    cmp r0, r3
+    jeq MovPlayerD
+
+    loadn r3, #'a'          ; Andar para esquerda
+    cmp r0, r3
+    jeq MovPlayerA
+
+    loadn r3, #'s'          ; Andar para baixo
+    cmp r0, r3
+    jeq MovPlayerS
+
+    ; Caso ele não tenha se movido, pulamos as instruções para desenhar
+    jmp MovPlayerEnd
+
+MovPlayeDrawn:
+    loadn r6, #'.'			; Carregando e pintando '.'
+	loadn r7, #768
+	add r6, r6, r7
+    outchar r6, r5          ; Pintando a posição anterior de preto
+    outchar r2, r1          ; Pintando o personagem na nova posição
+    store player, r1     ; Salvando a nova posição
+
+MovEnemnd:
+	pop r7
+    pop r6
+    pop r5
+    pop r4
+    pop r3
+    rts
+
+; MapSetUp(r2 = item)
+; Faz todos os cálculos para gerar o mapa do novo nível
 MapSetUp:
 	push r0				    ; r0 = position
 	push r2					; r2 = height
@@ -1075,7 +1313,7 @@ DrawnDoor:
 	loadn r0, #memoryMap
 	loadn r2, #'/'
 	add r0, r0, r7
-	storei r0, r2
+	;storei r0, r2
 
 	; Verificando qual a cor da porta
 	loadn r6, #0
@@ -1103,22 +1341,84 @@ DrawnDoorGreen:
 	loadn r1, #512
 	add r2, r2, r1
 	outchar r2, r7
+	storei r0, r2
 	jmp DrawnDoorEnd
 DrawnDoorYellow:
 	loadn r1, #2816
 	add r2, r2, r1
 	outchar r2, r7
+	storei r0, r2
 	jmp DrawnDoorEnd
 DrawnDoorBlue:
 	loadn r1, #3072
 	add r2, r2, r1
 	outchar r2, r7
+	storei r0, r2
 	jmp DrawnDoorEnd
 DrawnDoorRed:
 	loadn r1, #256
 	add r2, r2, r1
 	outchar r2, r7
+	storei r0, r2
 	jmp DrawnDoorEnd
+
+
+
+;IsItADoor(): Verifica se o jogador está em alguma porta
+; Se sim, retorna em r1 1 e em r2 o código do item
+IsItADoor:
+	push r0						; Conteúdo da posição
+	push r4						; Recebe '/'
+	push r3						; Recebe as portas coloridas para comparação
+
+	; Carregando o que há na memoria na posição do player
+	loadn r4, #'/'
+	load r1, player				; r1 recebe posplayer
+	loadn r0, #memoryMap
+	add r0, r0, r1
+	loadi r0, r0				; r0 recebe o que há nessa posição do mapa
+
+	; Verificando se é uma das portas
+	loadn r1, #1				; Caso haja, r1 será um no final
+	
+	loadn r3, #512
+	add r3, r3, r4
+	cmp r0, r3
+	jeq ItIsADoorGreen
+	loadn r3, #2816
+	add r3, r3, r4
+	cmp r0, r3
+	jeq ItIsADoorYellow
+	loadn r3, #3072
+	add r3, r3, r4
+	cmp r0, r3
+	jeq ItIsADoorBlue
+	loadn r3, #256
+	add r3, r3, r4
+	cmp r0, r3
+	jeq ItIsADoorRed
+	
+	loadn r1, #0				; Como não há portas, voltamos r1 para zero
+IsItADoorEnd:
+	pop r3
+	pop r4
+	pop r0
+	rts
+
+ItIsADoorGreen:
+	loadn r2, #0
+	jmp IsItADoorEnd
+ItIsADoorYellow:
+	loadn r2, #1
+	jmp IsItADoorEnd
+ItIsADoorBlue:
+	loadn r2, #2
+	jmp IsItADoorEnd
+ItIsADoorRed:
+	loadn r2, #3
+	jmp IsItADoorEnd	
+
+; Código pro item: 0: x, 1: m, 2: d, 3: v
 
 ;********************************************************
 ;               IMPRIME TELA
@@ -1324,7 +1624,7 @@ tela0Linha6  : string "  \\_____  \\ |  |/     \\\\__  \\  /  ___/  "
 tela0Linha7  : string "  /        \\|  |  / \\  \\/ __ \\_\\___ \\   "
 tela0Linha8  : string " /_______  /|__|__|_|  (____  /____  >  "
 tela0Linha9  : string "         \\/          \\/     \\/     \\/   "
-tela0Linha10 : string "  __________                            "
+tela0Linha10 : string " __________                             "
 tela0Linha11 : string " \\______   \\ ____   ____  __ __   ____  "
 tela0Linha12 : string "  |       _//  _ \\ / ___\\|  |  \\_/ __ \\ "
 tela0Linha13 : string "  |    |   (  <_> ) /_/  >  |  /\\  ___/ "
