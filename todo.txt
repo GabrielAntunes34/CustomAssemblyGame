@@ -1,57 +1,18 @@
+GameLoop:
+    Se jogador em porta --> new level (com item da porta)
+
 --> Level: Tentar fazer cada sala um nível (simplifica: Sem caminhos e possibilidade de sobreescrever)
 - map_setup(int posPlayer) {
-    RefreshScreen();
-    createRoom();
-    DrawnRoom();
+    setItem
+    setEnemies
     
 }
 
 
 --> Jogador:
-    Colisoes() {
-        se ., pode andar
-        se | ou _ não pode, mas passa o turno
-        Se + porta
-    }
+    Colisões da porta
 
 
 --> Inimigos:
-
-- Pensamentos do nosso amigo Gepeto:
-In a retro rogue game, enemies typically operate based on a set of rules or behaviors 
-programmed into the game. Here's a basic rundown of how enemies might work in such a game:
-
---Movement Patterns: Enemies often follow specific movement patterns or AI algorithms. 
-This could include simple behaviors like moving toward the player character if they are
- within a certain range, or patrolling a set path within the game environment.
-
---Aggression Levels: Enemies may have different aggression levels based on factors 
-such as player proximity, health, or line of sight. For example, an enemy might become 
-more aggressive and pursue the player if they are spotted, while others might only attack
- if the player gets too close.
-
---Attack Mechanics: Enemies typically have specific attacks or actions they can perform.
-This could range from simple melee attacks to ranged attacks like shooting projectiles or
-casting spells. The frequency and power of these attacks can vary depending on the enemy
-type and difficulty level.
-
-AI Reaction to Player Actions: Enemies might react to the player's actions in various ways. 
-For instance, they might become alerted if the player makes noise or attacks them, leading 
-nearby enemies to converge on the player's location.
-
-Randomization: To add variety and challenge, some retro rogue games may incorporate random 
-elements into enemy behavior. This could include randomized patrol routes, variable attack 
-patterns, or unpredictable movement decisions.
-
-Health and Damage: Enemies typically have their own health pools and can deal damage 
-to the player character upon contact or through attacks. This creates a risk-reward 
-dynamic where players must strategically engage with enemies while minimizing damage 
-to themselves.
-
---Spawn Mechanics: Enemies may spawn dynamically based on the player's progress through 
-the game or specific triggers within the game world. This ensures that encounters remain 
-challenging and unpredictable, even upon repeated playthroughs.
-
-Overall, the goal of enemy design in a retro rogue game is to provide engaging and 
-challenging encounters that require players to adapt and strategize as they navigate 
-the game's procedurally generated levels.
+aumento da vida: 10 a 20
+aumento do dano: 5 a 7
