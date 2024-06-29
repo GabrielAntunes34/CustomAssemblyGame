@@ -730,9 +730,9 @@ ProcessEnemy:
 	add r0, r0, r1			; somar 4 para conseguir a quantidade de inimigos
 	loadi r2, r0			; r2 = valor da quantidade de inimigos
 
-	loadn r1, #0			; vai guardar o index do inimigo
+	loadn r1, #0			; contador da quantidade de inimigos
 	loadn r3, #enemies		; Endereco inimigo
-	call MovEnemyLoop
+	call MovEnemyLoop		; função que chama MovEnemy para cada inimigo
 
 	pop r4	
 	pop r3	
@@ -751,68 +751,149 @@ MovEnemyLoop:
 	jle MovEnemyAlive		; caso seja r4 > 0, entao está vivo
 
 	loadn r0, #3
-	add r3, r3, r0			; pular inimigo
+	add r3, r3, r0			; pular inimigo pois tá morto
 	jmp MovEnemyLoop
 
 ; inimigo vivo, r3 = endereco do inimigo da vez	
 MovEnemyAlive:
-	load r0, player			; pegar a posição do jogador
+	load r0, player			; r0 = pos jogador
 	
 	inc r3
 	loadi r1, r3			; r1 = pos inimigo
 
-	
+	call MovEnemy
 
 	cmp r1, r2
 	jeq MovEnemyLoopEnd		; sair do loop depois que passar por todos
-	inc r1
+	inc r1					; incrementar o contador
 	
 	jmp MovEnemyLoop
 
 MovEnemyLoopEnd:
 	rts
 
+; MovEnemy 
+; (r0 = pos jogador, 
+;  r1 = pos inimigo, 
+;  r3 = endereco pos inimigo da vez)
 MovEnemy:
-    push r3
+    push r2
     push r4
     push r5
     push r6
 	push r7
+	
+	; comparar a pos do inimigo com o do jogador
+    loadn r2, #40
+	sub r4, r1, r0		; r4 = posInimigo - porJog
+	cmp r2, r4			; se r4 >= 40, mover para cima
+    jel MovEnemyUp
 
-    loadn r3, #'w'          ; Andar para cima
-    cmp r0, r3
-    jeq MovPlayerW
+	sub r4, r0, r1		; r4 = posJog - posInimigo
+	cmp r2, r4			; se r4 >= 40, mover para baixo
+    jel MovEnemyS
 
-    loadn r3, #'d'          ; Andar para direita
-    cmp r0, r3
-    jeq MovPlayerD
+	sub r4, r1, r0		; r4 = posInimigo - posJog
+	cmp r4, r2			; se r4 <= r2, mover para esquerda
+	jle MovEnemyA		
 
-    loadn r3, #'a'          ; Andar para esquerda
-    cmp r0, r3
-    jeq MovPlayerA
-
-    loadn r3, #'s'          ; Andar para baixo
-    cmp r0, r3
-    jeq MovPlayerS
+	sub r4, r0, r1		; r4 = posJog - posInimigo
+	cmp r4, r2			; se r4 <= r2, mover para direita
+    jle MovEnemyD
 
     ; Caso ele não tenha se movido, pulamos as instruções para desenhar
-    jmp MovPlayerEnd
+    jmp MovEnemyEnd
 
-MovPlayeDrawn:
+MovEnemyDrawn:
     loadn r6, #'.'			; Carregando e pintando '.'
 	loadn r7, #768
 	add r6, r6, r7
     outchar r6, r5          ; Pintando a posição anterior de preto
     outchar r2, r1          ; Pintando o personagem na nova posição
-    store player, r1     ; Salvando a nova posição
 
-MovEnemnd:
+    storei r3, r1     ; Salvando a nova posição em r3 (posicao do inimigo)
+
+MovEnemyEnd:
 	pop r7
     pop r6
     pop r5
     pop r4
-    pop r3
+    pop r2
     rts
+
+MovEnemyW:
+	; Calculando a nova posição em r2
+	; r1 tera a posicao antiga
+	mov r2, r1 
+    loadn r4, #40
+    sub r2, r2, r4          ; posEnemy -= 40 (sobe);
+	call HandlePlayerCollision
+    jmp MovEnemyDrawn
+
+MovEnemyD:
+	mov r2, r1
+    inc r2                  ; posEnemy++;
+	call HandlePlayerCollision
+    jmp MovEnemyDrawn
+
+MovEnemyA:
+	mov r2, r1
+    dec r2                  ; posEnemy--;
+	call HandlePlayerCollision
+    jmp MovEnemyDrawn
+
+MovEnemyS:
+	mov r2, r1
+    loadn r4, #40
+    add r2, r2, r4          ; porEnemy += 40;
+	call HandlePlayerCollision
+    jmp MovEnemyDrawn
+
+;HandlePlayerColision(r1 = velhaPosição, r2 = novaPosição, r3 = end pos inimigo da vez)
+; Verifica se, em um movimento, não houveram colisões, retornando em r1 o resultado
+HandlePlayerColision:
+	push r0
+	push r4
+	push r5
+	push r6
+	push r7
+
+	loadn r0, #'@'			; Carregando '@' em r0 para comparar com o mapa
+	loadn r5, #memoryMap	
+	add r5, r5, r2
+	loadi r5, r5			; r5 recebe o que há no mapa na posição r2
+	cmp r5, r0
+	jeq HandlePlayerColisionAttack ; se novaPosição == '@', decrescemos a vida do jogador, e não mudaremos a posição antiga (r1)
+	
+	mov r1, r2				; senão, r1 = novaPosição (r2)
+	jmp HandlePlayerColisionEnd
+
+HandlePlayerCollisionAttack:
+	inc r3					; endereco do ataque do inimigo
+	loadi r5, r3			; ataque do inimigo
+	dec r3					; voltando para o endereco de posicao do inimigo
+	
+	loadn r6, #player
+	inc r6					; endereco da vida do player
+	loadi r7, r6			; vida do player
+
+	loadi r0, #0
+	sub r7, r7, r5
+	jel r7, r0, mainDeathSecren			; caso a vida nova do jogador seja menor que 0, morre!
+
+	store r6, r7						; mudando a vida do player
+
+HandlePlayerColisionEnd:
+	; atualizar o status do jogador
+	call UISetUp
+
+HandlePlayerColisionExit:
+	pop r7
+	pop r6
+	pop r5
+	pop r4
+	pop r0
+	rts 
 
 ; MapSetUp(r2 = item)
 ; Faz todos os cálculos para gerar o mapa do novo nível
