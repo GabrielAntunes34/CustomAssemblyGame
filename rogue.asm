@@ -723,6 +723,7 @@ ProcessEnemy:
 	push r2
 	push r3
 	push r4
+	push r5
 	
 	; Enemies: 0: LifeEnemy1, 1: PosEnemy1, 2: DamageEnemy1, 3: lifeEnemy2, ..,
 	loadn r1, #4
@@ -730,10 +731,11 @@ ProcessEnemy:
 	add r0, r0, r1			; somar 4 para conseguir a quantidade de inimigos
 	loadi r2, r0			; r2 = valor da quantidade de inimigos
 
-	loadn r1, #0			; contador da quantidade de inimigos
+	loadn r5, #0			; contador da quantidade de inimigos
 	loadn r3, #enemies		; Endereco inimigo
 	call MovEnemyLoop		; função que chama MovEnemy para cada inimigo
 
+	pop r5
 	pop r4	
 	pop r3	
 	pop r2	
@@ -763,9 +765,9 @@ MovEnemyAlive:
 
 	call MovEnemy
 
-	cmp r1, r2
+	cmp r5, r2
 	jeq MovEnemyLoopEnd		; sair do loop depois que passar por todos
-	inc r1					; incrementar o contador
+	inc r5					; incrementar o contador
 	
 	jmp MovEnemyLoop
 
