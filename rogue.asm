@@ -156,7 +156,7 @@ mainGameLoop:
 
     ; Processando os turnos do jogador e dos inimigos
     call ProcessPlayer
-	;call ProcessEnemy
+	call ProcessEnemy
 
 	; Caso o jogador, tenha morrido:
 	loadn r0, #player
@@ -769,6 +769,8 @@ MovEnemyAlive:
 	jeq MovEnemyLoopEnd		; sair do loop depois que passar por todos
 	inc r5					; incrementar o contador
 	
+	loadn r0, #2			; somar 2 pois em teoria esta no end da pos do inimigo
+	add r3, r3, r0			; ir para o proximo inimigo
 	jmp MovEnemyLoop
 
 MovEnemyLoopEnd:
@@ -791,26 +793,22 @@ MovEnemy:
 	cmp r2, r4			; se r4 >= 40, mover para cima
     jel MovEnemyW
 
-	sub r4, r0, r1		; r4 = posJog - posInimigo
+	loadn r2, #40
+	sub r4, r0, r1		; r4 = posJogador - posInimigo
 	cmp r2, r4			; se r4 >= 40, mover para baixo
     jel MovEnemyS
 
-	sub r4, r1, r0		; r4 = posInimigo - posJog
-	cmp r4, r2			; se r4 <= r2, mover para esquerda
-	jle MovEnemyA		
+	cmp r0, r1			; se posJog < PosInimigo, mover para esquerda
+	jel MovEnemyA		
 
-	sub r4, r0, r1		; r4 = posJog - posInimigo
-	cmp r4, r2			; se r4 <= r2, mover para direita
-    jle MovEnemyD
+	cmp r1, r0			; se posInimigo < posJog, mover para direita
+    jel MovEnemyD
 
     ; Caso ele não tenha se movido, pulamos as instruções para desenhar
     jmp MovEnemyEnd
 
 MovEnemyDrawn:
-    loadn r6, #'.'			; Carregando e pintando '.'
-	loadn r7, #768
-	add r6, r6, r7
-    outchar r6, r5          ; Pintando a posição anterior de preto
+	load r2, spriteEnemy
     outchar r2, r1          ; Pintando o personagem na nova posição
 
     storei r3, r1     ; Salvando a nova posição em r3 (posicao do inimigo)
@@ -867,6 +865,11 @@ HandlePlayerCollision:
 	cmp r5, r0
 	jeq HandlePlayerCollisionAttack ; se novaPosição == '@', decrescemos a vida do jogador, e não mudaremos a posição antiga (r1)
 	
+	loadn r6, #'.'			; Carregando e pintando '.'
+	loadn r7, #768
+	add r6, r6, r7
+    outchar r6, r1         ; Pintando a posição anterior de preto
+
 	mov r1, r2				; senão, r1 = novaPosição (r2)
 	jmp HandlePlayerCollisionEnd
 
