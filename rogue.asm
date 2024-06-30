@@ -53,7 +53,7 @@ static Rand + #2, #24
 static Rand + #3, #16
 static Rand + #4, #9
 static Rand + #5, #11
-static Rand + #6, #5
+static Rand + #6, #17
 static Rand + #7, #22
 static Rand + #8, #23
 static Rand + #9, #12
@@ -62,7 +62,7 @@ static Rand + #11, #21
 static Rand + #12, #19
 static Rand + #13, #25
 static Rand + #14, #20
-static Rand + #15, #5
+static Rand + #15, #7
 static Rand + #16, #14
 static Rand + #17, #17
 static Rand + #18, #15
@@ -77,7 +77,7 @@ static Rand + #26, #25
 static Rand + #27, #11
 static Rand + #28, #23
 static Rand + #29, #7
-static Rand + #30, #6
+static Rand + #30, #8
 static Rand + #31, #14
 static Rand + #32, #19
 static Rand + #33, #10
@@ -89,7 +89,7 @@ static Rand + #38, #22
 static Rand + #39, #12
 static Rand + #40, #21
 static Rand + #41, #10
-static Rand + #42, #6
+static Rand + #42, #8
 static Rand + #43, #9
 static Rand + #44, #7
 static Rand + #45, #13
@@ -140,7 +140,6 @@ mainNewLevel:
 	; Setando o mapa
     call MapSetUp
 	call UISetUp
-	call SpawnItem
 
 mainGameLoop:
 	; Esperando o turno do jogador
@@ -165,15 +164,6 @@ mainGameLoop:
 	loadn r1, #0			; r1 recebe zero para a comparação
 	cmp r0, r1
 	jeq mainDeathSecren
-
-	; Caso não tenha mais inimigos na sala --> Colocar isso em processEnemies??
-	;loadn r0, #room
-	;loadn r2, #4
-	;add r0, r0, r2
-	;loadi r0, r0			; r0 recebe nmrEnemies
-	;cmp r0, r1
-	;jne mainProcessDoor
-	;call SpawnItem			; se nmrEnemies == 0
 
 	; Caso o jogador tenhe chegado a uma porta
 	call IsItADoor			; Retornando em r1 se há portas e, se sim, setando
@@ -391,42 +381,49 @@ MovPlayerW:
 	mov r3, r1 
     loadn r4, #40
     sub r3, r3, r4          ; posPlayer -= 40 (sobe);
-	call HandleWallColision
+	call HandleColision
     jmp MovPlayerDrawn
 
 MovPlayerD:
 	mov r3, r1
     inc r3                  ; posPlayer++;
-	call HandleWallColision
+	call HandleColision
     jmp MovPlayerDrawn
 
 MovPlayerA:
 	mov r3, r1
     dec r3                  ; posPlayer--;
-	call HandleWallColision
+	call HandleColision
     jmp MovPlayerDrawn
 
 MovPlayerS:
 	mov r3, r1
     loadn r4, #40
     add r3, r3, r4          ; porPlayer += 40;
-	call HandleWallColision             
-    jmp MovPlayerDrawn
+	call HandleColision             
+	jmp MovPlayerDrawn
 
-;HandleWallColision(r1 = velhaPosição, r3 = novaPosição)
+;HandleColision(r1 = velhaPosição, r3 = novaPosição)
 ; Verifica se, em um movimento, não houveram colisões, retornando em r1 o resultado
-HandleWallColision:
+HandleColision:
 	push r0
 	push r2
 	push r4
 	push r5
+	push r6
+	push r7
 
 	loadn r0, #'-'			; Carregando '-' em r0 para comparar com o mapa
 	loadn r2, #memoryMap	
 	add r2, r2, r3
 	loadi r2, r2			; r2 recebe o que há no mapa na posição r3
 	cmp r2, r0
-	jeq HandleWallColisionEnd ; se novaPosição == '-', não mudaremos a posição antiga (r1)
+	jeq HandleColisionEnd ; se novaPosição == '-', não mudaremos a posição antiga (r1)
+
+	loadn r0, #'&'			; Carregando '&' em r0 para comparar com o mapa
+	cmp r2, r0
+	jeq HandleColisionEnemy
+	
 	mov r1, r3				; senão, r1 = novaPosição (r3)
 
 	; Com a posição atualizada, verificamos se há item
@@ -446,11 +443,11 @@ HandleWallColision:
 	cmp r2, r0
 	jeq Grabmaxhealthpotion
 
-HandleWallColisionEnd:
+HandleColisionEnd:
 	; Verificando se um item foi obtido
 	loadn r0, #1
 	cmp r2, r0			; Resetando, se r0 == 1
-	jne HandleWallColisionExit
+	jne HandleColisionExit
 
 	; Tirando item do mapa da memória e da tela
 	loadn r4, #memoryMap
@@ -461,12 +458,87 @@ HandleWallColisionEnd:
 	call OpenDoors
 	call UISetUp
 
-HandleWallColisionExit:
+HandleColisionExit:
+	pop r7
+	pop r6
 	pop r5
 	pop r4
 	pop r2
 	pop r0
 	rts 
+
+; r3 = posicao onde o inimigo vai tar (preciso dele pra comparar)
+HandleColisionEnemy:
+	loadn r4, #enemies
+	inc r4								; incrementar para pegar end da posicao do inimigo
+	call HandleColisionEnemyGetAddress	; conseguir o endereço do inimigo (em r4)
+	
+	loadn r0, #4
+	loadn r6, #player
+	add r6, r6, r0						; endereço do ataque do jogador
+	loadi r6, r6						; valor do ataque do jogador
+
+	loadi r5, r4						; vida do inimigo
+	cmp r6, r5
+	jle HandleColisionEnemyDeathSkip
+
+	push r1
+	push r0
+	loadn r0, #35
+	mov r1, r5
+	call PrintNumber
+	pop r0
+	pop r1
+
+	loadn r5, #0						; vida nova do inimigo = 0
+	storei r4, r5						; colocando vida nova no endereco
+	
+	; inimigo morreu
+	loadn r7, #4
+	loadn r0, #room			; endereço #room em r0
+	add r0, r0, r7			; somar 4 para conseguir a quantidade de inimigos
+	loadi r6, r0			; r6 = valor da quantidade de inimigos
+	dec r6
+	storei r0, r6
+
+	; Verificando se acabaram-se os inimigos
+	loadn r7, #0
+	cmp r6, r7
+	jne HandleColisionEnemySkipSpawn
+	call SpawnItem
+
+HandleColisionEnemySkipSpawn:
+
+	loadn r6, #0
+	loadn r4, #memoryMap
+	add r4, r4, r3			; Acessando a posição anterior no mapa da memória
+	storei r4, r6			; Apagando o inimigo dessa posição anterior
+
+	loadn r6, #'.'
+	loadn r7, #768
+	add r6, r6, r7
+    outchar r6, r3          ; apagando personagem
+
+	jmp HandleColisionExit
+
+HandleColisionEnemyDeathSkip: 
+	sub r5, r5, r6						; vida nova do inimigo
+	storei r4, r5						; colocando vida nova no endereco
+	jmp HandleColisionExit
+
+; recebe r4 (endereco) e r3 (valor da posicao do inimigo)
+HandleColisionEnemyGetAddress:
+	loadi r5, r4
+	cmp r5, r3
+	jeq HandleColisionEnemyGetAddressEnd	; se igual, entao encontrei o endereco
+	
+	loadn r0, #3
+	add r4, r4, r0							; pular para o prox inimigo
+	jmp HandleColisionEnemyGetAddress
+
+HandleColisionEnemyGetAddressEnd:
+	dec r4						; retornarei o endereco da vida do inimigo			
+	rts
 
 Grabhealthpotion:
 	push r1
@@ -476,10 +548,9 @@ Grabhealthpotion:
 
 	loadn r1, #player
 	inc r1				; r1 recebe o endereço de life
-	loadi r3, r1 		; r3 recebe o valor nesse endereço                 
+	loadi r3, r1 		; r3 recebe o valor nesse endereço
 	
-	loadn r2, #2
-	add r5, r1, r2		; passando enderenço de maxLife
+	inc r1
 	loadi r5, r1		; r5 recebe o valor de maxLife
 
 	loadn r4, #healthPotion
@@ -491,7 +562,8 @@ Grabhealthpotion:
 	jel skipHealthToMaxHealth
 	mov r3, r5
 
-skipHealthToMaxHealth:	
+skipHealthToMaxHealth:
+	dec r1
 	storei r1, r3
 
 	loadn r2, #1		; Indicará que as portas deverão abrir
@@ -500,7 +572,7 @@ skipHealthToMaxHealth:
 	pop r4
 	pop r3
 	pop r1
-	jmp HandleWallColisionEnd
+	jmp HandleColisionEnd
 
 
 Grabcoinpotion:
@@ -523,7 +595,7 @@ Grabcoinpotion:
 	pop r4
 	pop r3
 	pop r1
-	jmp HandleWallColisionEnd
+	jmp HandleColisionEnd
 
 Grabdamagepotion:
 	push r1
@@ -545,29 +617,35 @@ Grabdamagepotion:
 	pop r4
 	pop r3
 	pop r1
-	jmp HandleWallColisionEnd
+	jmp HandleColisionEnd
 
 Grabmaxhealthpotion:
 	push r1
 	push r3
 	push r4
 
-	loadn r1, #player
-	loadn r2, #2     
-	add r1, r1, r2			; r1 recebe o endereço de maxHealth
-	loadi r3, r1            ; r3 recebe o valor nesse endereçø
 	loadn r4, #MaxHealthPotion
 	inc r4
-	loadi r4, r4
+	loadi r4, r4			; r4 recebe o valor do incremento
+
+	; Atualizando a vida atual
+	loadn r1, #player
+	inc r1     				; r1 recebe o endereço de health
+	loadi r3, r1            ; r3 recebe o valor nesse endereçø
 	add r3, r4, r3
-	storei r1, r3
+	storei r1, r3			; Guardamos a vida aumentada
 
-	loadn r2, #1		; Indicará que as portas deverão abrir
+	; Atualizando max health
+	inc r1					; r1 recebe o endereço de maxHealth
+	loadi r3, r1			; r3 recebe o valor nesse endereço
+	add r3, r3, r4
+	storei r1, r3			; Guardamos a nova vida máxima
 
+	loadn r2, #1			; Indicará que as portas deverão abrir
 	pop r4
 	pop r3
 	pop r1
-	jmp HandleWallColisionEnd
+	jmp HandleColisionEnd
 
 
 ; Gera os inimigos de um novo mapa a partir de nmrEnemies
@@ -587,6 +665,7 @@ SetEnemies:
 	call GenerateRand
 	mod r2, r2, r0
 	inc r2					; Número de inimigos gerado
+	storei r3, r2
 
 	; Loop para setar cada inimigo
 	loadn r1, #0			; r1 recebe a posição do primeiro inimigo
@@ -671,7 +750,7 @@ EnemiesSetUpIsZero:
 	add r3, r3, r6  ; Pega posição de memória da posição do inimigo
 	storei r3, r0
 
-	loadn r7, #'a'
+	loadn r7, #'&'
 	outchar r7, r0
 	jmp EnemiesSetUpEnd
 EnemiesSetUpIsOne:
@@ -692,7 +771,7 @@ EnemiesSetUpIsOne:
 	add r2, r2, r6 ; Pega a posição de memória do inimigo
 	storei r2, r3 ; Salva no endereço de memória de r2 o valor contido em r3
 
-	loadn r7, #'b'
+	loadn r7, #'&'
 	outchar r7, r3
 	jmp EnemiesSetUpEnd
 
@@ -711,7 +790,7 @@ EnemiesSetUpIsTwo:
 	add r2, r2, r6 ; Pega a posição de memória do inimigo
 	storei r2, r3 ; Salva no endereço de memória de r2 o valor contido em r3
 
-	loadn r7, #'c'
+	loadn r7, #'&'
 	outchar r7, r3
 	jmp EnemiesSetUpEnd
 
@@ -731,7 +810,7 @@ ProcessEnemy:
 	add r0, r0, r1			; somar 4 para conseguir a quantidade de inimigos
 	loadi r2, r0			; r2 = valor da quantidade de inimigos
 
-	loadn r5, #0			; contador da quantidade de inimigos
+	loadn r5, #1			; contador da quantidade de inimigos
 	loadn r3, #enemies		; Endereco inimigo
 	call MovEnemyLoop		; função que chama MovEnemy para cada inimigo
 
@@ -748,9 +827,13 @@ ProcessEnemy:
 ; Para cada inimigo, ver posição do jogador, e posição dos outros inimigos
 MovEnemyLoop:
 	loadn r0, #0
+
+	cmp r0, r2
+	jeq MovEnemyLoopEnd
+
 	loadi r4, r3			; life enemy
 	cmp r0, r4				; comparar lifeEnemy com 0
-	jle MovEnemyAlive		; caso seja r4 > 0, entao está vivo
+	jne MovEnemyAlive		; caso seja r4 != 0, entao está vivo
 
 	loadn r0, #3
 	add r3, r3, r0			; pular inimigo pois tá morto
@@ -788,15 +871,31 @@ MovEnemy:
 	push r7
 	
 	; comparar a pos do inimigo com o do jogador
-    loadn r2, #40
-	sub r4, r1, r0		; r4 = posInimigo - porJog
-	cmp r2, r4			; se r4 >= 40, mover para cima
-    jel MovEnemyW
+    ;loadn r2, #40
+	;sub r4, r1, r0		; r4 = posInimigo - porJog
+	;cmp r2, r4			; se r4 >= 40, mover para cima
+    ;jel MovEnemyW
 
+	; Compararemos a distancia com quanto falta para o player chegar a outra linha
 	loadn r2, #40
-	sub r4, r0, r1		; r4 = posJogador - posInimigo
-	cmp r2, r4			; se r4 >= 40, mover para baixo
-    jel MovEnemyS
+	mod r4, r0, r2		; r4 = pos % 40
+	sub r5, r2, r4		; r5 = quanto falta para completar a linha do player (q)
+	
+	sub r6, r1, r0		; r6 = posInimigo - posJog (dist)
+	cmp r5, r6			
+	jel MovEnemyW		; se dist > q, mover para cima
+	 
+	;loadn r2, #40
+	;sub r4, r0, r1		; r4 = posJogador - posInimigo
+	;cmp r2, r4			; se r4 >= 40, mover para baixo
+    ;jel MovEnemyS
+
+	mod r4, r1, r2		
+	sub r5, r2, r4
+
+	sub r6, r0, r1
+	cmp r5, r6
+	jel MovEnemyS
 
 	cmp r0, r1			; se posJog < PosInimigo, mover para esquerda
 	jel MovEnemyA		
@@ -810,8 +909,12 @@ MovEnemy:
 MovEnemyDrawn:
 	load r2, spriteEnemy
     outchar r2, r1          ; Pintando o personagem na nova posição
+    storei r3, r1     		; Salvando a nova posição em r3 (posição do inimigo)
 
-    storei r3, r1     ; Salvando a nova posição em r3 (posicao do inimigo)
+	loadn r4, #memoryMap
+	add r4, r4, r1			; Acessando a nova posição no mapa da memória	
+	loadn r7, #'&'
+	storei r4, r7			; Guardando & nessa nova posição
 
 MovEnemyEnd:
 	pop r7
@@ -858,17 +961,19 @@ HandlePlayerCollision:
 	push r6
 	push r7
 
-	loadn r0, #'@'			; Carregando '@' em r0 para comparar com o mapa
-	loadn r5, #memoryMap	
-	add r5, r5, r2
-	loadi r5, r5			; r5 recebe o que há no mapa na posição r2
-	cmp r5, r0
+	load r5, player					; posicao do jogador
+	cmp r5, r2
 	jeq HandlePlayerCollisionAttack ; se novaPosição == '@', decrescemos a vida do jogador, e não mudaremos a posição antiga (r1)
 	
 	loadn r6, #'.'			; Carregando e pintando '.'
 	loadn r7, #768
 	add r6, r6, r7
     outchar r6, r1         ; Pintando a posição anterior de preto
+
+	loadn r6, #0
+	loadn r4, #memoryMap
+	add r4, r4, r1			; Acessando a posição anterior no mapa da memória
+	storei r4, r6			; Apagando o inimigo dessa posição anterior
 
 	mov r1, r2				; senão, r1 = novaPosição (r2)
 	jmp HandlePlayerCollisionEnd
@@ -1245,7 +1350,6 @@ DrawnRoomBottom:
 SetPlayerInRoom:
 	push r1
 	push r2
-	
 
 	; Recalculando a posição do jogador
 	loadn r1, #41
