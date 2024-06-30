@@ -789,7 +789,7 @@ MovEnemy:
     loadn r2, #40
 	sub r4, r1, r0		; r4 = posInimigo - porJog
 	cmp r2, r4			; se r4 >= 40, mover para cima
-    jel MovEnemyUp
+    jel MovEnemyW
 
 	sub r4, r0, r1		; r4 = posJog - posInimigo
 	cmp r2, r4			; se r4 >= 40, mover para baixo
@@ -853,7 +853,7 @@ MovEnemyS:
 
 ;HandlePlayerColision(r1 = velhaPosição, r2 = novaPosição, r3 = end pos inimigo da vez)
 ; Verifica se, em um movimento, não houveram colisões, retornando em r1 o resultado
-HandlePlayerColision:
+HandlePlayerCollision:
 	push r0
 	push r4
 	push r5
@@ -865,10 +865,10 @@ HandlePlayerColision:
 	add r5, r5, r2
 	loadi r5, r5			; r5 recebe o que há no mapa na posição r2
 	cmp r5, r0
-	jeq HandlePlayerColisionAttack ; se novaPosição == '@', decrescemos a vida do jogador, e não mudaremos a posição antiga (r1)
+	jeq HandlePlayerCollisionAttack ; se novaPosição == '@', decrescemos a vida do jogador, e não mudaremos a posição antiga (r1)
 	
 	mov r1, r2				; senão, r1 = novaPosição (r2)
-	jmp HandlePlayerColisionEnd
+	jmp HandlePlayerCollisionEnd
 
 HandlePlayerCollisionAttack:
 	inc r3					; endereco do ataque do inimigo
@@ -879,17 +879,18 @@ HandlePlayerCollisionAttack:
 	inc r6					; endereco da vida do player
 	loadi r7, r6			; vida do player
 
-	loadi r0, #0
+	loadn r0, #0
 	sub r7, r7, r5
-	jel r7, r0, mainDeathSecren			; caso a vida nova do jogador seja menor que 0, morre!
+	cmp r7, r0 			; caso a vida nova do jogador seja menor que 0, morre!
+	jel mainDeathSecren
 
-	store r6, r7						; mudando a vida do player
+	storei r6, r7						; mudando a vida do player
 
-HandlePlayerColisionEnd:
+HandlePlayerCollisionEnd:
 	; atualizar o status do jogador
 	call UISetUp
 
-HandlePlayerColisionExit:
+HandlePlayerCollisionExit:
 	pop r7
 	pop r6
 	pop r5
