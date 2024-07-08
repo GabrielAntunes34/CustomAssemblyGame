@@ -1,5 +1,5 @@
 all:
-	./montador rogue.asm rogue.mif
+	./montador rogue.asm cpuram.mif
 
 run: all
 	./simulador test.mif charmap.mif
