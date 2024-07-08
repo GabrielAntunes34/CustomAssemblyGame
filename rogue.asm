@@ -146,7 +146,14 @@ mainGameLoop:
     inchar r0               ; r0 recebe o comando do jogador
 	loadn r1, #255
 	cmp r0, r1
-	jeq mainGameLoop
+	jne mainGameLoop
+
+mainGameLoop2:
+	; Esperando o turno do jogador
+    inchar r0               ; r0 recebe o comando do jogador
+	loadn r1, #255
+	cmp r0, r1
+	jeq mainGameLoop2
 
 	; caso o jogador saia do jogo
     loadn r1, #'q'
@@ -365,6 +372,11 @@ MovPlayerDrawn:
 	loadn r7, #768
 	add r6, r6, r7
     outchar r6, r5          ; Pintando a posição anterior de preto
+	nop
+	nop
+	nop
+	nop
+	nop
     outchar r2, r1          ; Pintando o personagem na nova posição
     store player, r1     ; Salvando a nova posição
 
