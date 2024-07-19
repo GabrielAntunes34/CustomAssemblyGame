@@ -41,3 +41,5 @@ cd ..
 After that, you have everything needed to compile and play the game, which can be easily done by entering 'make run' in your terminal.
 
 ## Video showing the game (in portuguese)
+
+https://drive.google.com/file/d/1SxgwQX5zwKqPsKpO8DgJ3Aekt8PQCv6B/view?usp=sharing
